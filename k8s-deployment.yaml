@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: nodejs-app
-        image: karthickdevops/nodejs-k8s-app:latest  # this will be replaced by Jenkins
+        image: balu361988/small:latest
         ports:
         - containerPort: 3000
 ---
@@ -30,3 +30,4 @@ spec:
     - port: 3000
       targetPort: 3000
       nodePort: 31000
+
