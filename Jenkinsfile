@@ -29,21 +29,22 @@ pipeline {
           }
         }
       }
-    }
 
-    stage('Deploy to Kubernetes') {
-      steps {
-        script {
-          echo "Deploying to Kubernetes with image: ${FULL_IMAGE_NAME}"
-          // Replace image in Kubernetes YAML
-          sh """
-            sed -i 's|image: .*|image: ${FULL_IMAGE_NAME}|' k8s-deployment.yaml
-            kubectl apply -f k8s-deployment.yaml --validate=false
-            kubectl rollout status deployment/nodejs-app
-          """
-        }
-      }
+stage('Deploy to Kubernetes') {
+  steps {
+    script {
+      echo "Deploying to Kubernetes with image: ${FULL_IMAGE_NAME}"
+      sh """
+        mkdir -p \$HOME/.kube
+        cp /root/.kube/config \$HOME/.kube/config
+        sed -i 's|image: .*|image: ${FULL_IMAGE_NAME}|' k8s-deployment.yaml
+        kubectl apply -f k8s-deployment.yaml --validate=false
+        kubectl rollout status deployment/nodejs-app
+      """
     }
   }
 }
+    }
+}
+
 
