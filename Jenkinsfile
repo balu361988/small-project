@@ -12,7 +12,6 @@ pipeline {
     stage('Build Docker Image') {
       steps {
         script {
-          // Ensure docker is properly set up and then build the image with no cache
           echo "Building Docker image: ${FULL_IMAGE_NAME}"
           dockerImage = docker.build("${FULL_IMAGE_NAME}", "--no-cache .")
         }
@@ -23,28 +22,27 @@ pipeline {
       steps {
         script {
           echo "Pushing Docker image to DockerHub: ${FULL_IMAGE_NAME}"
-          // Push the Docker image to Docker Hub using the specified credentials
           docker.withRegistry('https://index.docker.io/v1/', 'docker') {
             dockerImage.push()
           }
         }
       }
+    }
 
-stage('Deploy to Kubernetes') {
-  steps {
-    script {
-      echo "Deploying to Kubernetes with image: ${FULL_IMAGE_NAME}"
-      sh """
-        mkdir -p \$HOME/.kube
-        cp /root/.kube/config \$HOME/.kube/config
-        sed -i 's|image: .*|image: ${FULL_IMAGE_NAME}|' k8s-deployment.yaml
-        kubectl apply -f k8s-deployment.yaml --validate=false
-        kubectl rollout status deployment/nodejs-app
-      """
+    stage('Deploy to Kubernetes') {
+      steps {
+        script {
+          echo "Deploying to Kubernetes with image: ${FULL_IMAGE_NAME}"
+          sh """
+            mkdir -p \$HOME/.kube
+            cp /root/.kube/config \$HOME/.kube/config
+            sed -i 's|image: .*|image: ${FULL_IMAGE_NAME}|' k8s-deployment.yaml
+            kubectl apply -f k8s-deployment.yaml --validate=false
+            kubectl rollout status deployment/nodejs-app
+          """
+        }
+      }
     }
   }
 }
-    }
-}
-
 
