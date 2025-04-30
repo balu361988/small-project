@@ -24,7 +24,7 @@ pipeline {
         script {
           echo "Pushing Docker image to DockerHub: ${FULL_IMAGE_NAME}"
           // Push the Docker image to Docker Hub using the specified credentials
-          docker.withRegistry('https://index.docker.io/v1/', 'dockerhub-creds') {
+          docker.withRegistry('https://index.docker.io/v1/', 'docker') {
             dockerImage.push()
           }
         }
