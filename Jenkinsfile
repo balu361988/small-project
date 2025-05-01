@@ -2,17 +2,24 @@ pipeline {
   agent any
 
   environment {
-    DOCKER_HUB_USER = "balu361988"
-    IMAGE_NAME = "small"
-    IMAGE_TAG = "v${BUILD_NUMBER}"
-    FULL_IMAGE_NAME = "${DOCKER_HUB_USER}/${IMAGE_NAME}:${IMAGE_TAG}"
+    DOCKER_HUB_USER = "balu361988"  // Your Docker Hub username
+    IMAGE_NAME = "small-project"    // Your project name
+    IMAGE_TAG = "v${BUILD_NUMBER}"  // Tag based on Jenkins build number
+    FULL_IMAGE_NAME = "${DOCKER_HUB_USER}/${IMAGE_NAME}:${IMAGE_TAG}"  // Full image name
   }
 
   stages {
+    stage('Checkout Code') {
+      steps {
+        // Pull the latest code from your repository
+        checkout scm
+      }
+    }
+
     stage('Build Docker Image') {
       steps {
         script {
-          echo "Building Docker image: ${FULL_IMAGE_NAME}"
+          // Build the Docker image using the Dockerfile in the project
           dockerImage = docker.build("${FULL_IMAGE_NAME}", "--no-cache .")
         }
       }
@@ -21,8 +28,8 @@ pipeline {
     stage('Push Docker Image to DockerHub') {
       steps {
         script {
-          echo "Pushing Docker image to DockerHub: ${FULL_IMAGE_NAME}"
-          docker.withRegistry('https://index.docker.io/v1/', 'docker') {
+          // Push the built Docker image to Docker Hub
+          docker.withRegistry('https://index.docker.io/v1/', 'dockerhub-creds') {
             dockerImage.push()
           }
         }
@@ -32,16 +39,25 @@ pipeline {
     stage('Deploy to Kubernetes') {
       steps {
         script {
-          echo "Deploying to Kubernetes with image: ${FULL_IMAGE_NAME}"
-          sh """
-            mkdir -p \$HOME/.kube
-            cp /root/.kube/config \$HOME/.kube/config
-            sed -i 's|image: .*|image: ${FULL_IMAGE_NAME}|' k8s-deployment.yaml
+          // Replace the image in k8s-deployment.yaml with the newly built image
+          sh '''
+            sed -i 's|image: .*|image: '"$FULL_IMAGE_NAME"'|' k8s-deployment.yaml
             kubectl apply -f k8s-deployment.yaml --validate=false
-            kubectl rollout status deployment/nodejs-app
-          """
+            kubectl rollout status deployment/small-project
+          '''
         }
       }
+    }
+  }
+
+  post {
+    success {
+      // Notify success or other actions after the build
+      echo "Deployment successful"
+    }
+    failure {
+      // Handle failures, like sending notifications
+      echo "Deployment failed"
     }
   }
 }
